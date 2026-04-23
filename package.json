@@ -1,0 +1,64 @@
+{
+  "name": "@diagrams-js/cli",
+  "version": "0.1.0",
+  "description": "CLI for diagrams-js - render, import, export, diff, and manage architecture diagrams",
+  "keywords": [
+    "architecture",
+    "cli",
+    "diagram-as-code",
+    "diagrams",
+    "diagrams-js",
+    "infrastructure",
+    "visualization"
+  ],
+  "homepage": "https://diagrams-js.hatemhosny.dev",
+  "license": "MIT",
+  "author": "Hatem Hosny",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diagrams-js/diagrams-js.git"
+  },
+  "bin": {
+    "diagrams": "./dist/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "fix": "vp check --fix",
+    "prepublishOnly": "vp run build"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.0",
+    "commander": "^12.0.0",
+    "diagrams-js": "^0.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^6.0.2",
+    "vite-plus": "^0.1.16"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+      "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    }
+  }
+}
