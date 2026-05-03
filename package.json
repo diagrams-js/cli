@@ -1,6 +1,6 @@
 {
   "name": "@diagrams-js/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "CLI for diagrams-js - render, import, export, diff, and manage architecture diagrams",
   "keywords": [
     "architecture",
