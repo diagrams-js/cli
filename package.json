@@ -15,8 +15,7 @@
   "license": "MIT",
   "author": "Hatem Hosny",
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/diagrams-js/diagrams-js.git"
+    "url": "https://github.com/diagrams-js/cli"
   },
   "bin": {
     "diagrams": "./dist/cli.mjs"
