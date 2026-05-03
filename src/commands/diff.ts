@@ -5,13 +5,14 @@
 
 import { execSync } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { resolve } from "path";
+import { resolve, basename, extname } from "path";
 import type { DiagramJSON } from "diagrams-js";
 import { loadConfig, mergeWithConfig } from "../utils/config.js";
 import { outputResult, createSpinner } from "../utils/helpers.js";
 
 export interface DiffCommandOptions {
   output?: string;
+  stdout?: boolean;
   format?: "html" | "svg";
   theme?: "light" | "dark";
   layout?: "side-by-side" | "stacked";
@@ -25,6 +26,18 @@ export interface DiffCommandOptions {
 export interface GitRef {
   base: string;
   target?: string;
+}
+
+export function resolveDiffOutputPath(
+  file: string,
+  cwd: string,
+  output?: string,
+  stdout?: boolean,
+): string | undefined {
+  if (output) return output;
+  if (stdout) return undefined;
+  const baseName = basename(file, extname(file));
+  return resolve(cwd, `${baseName}-diff.html`);
 }
 
 export async function diffCommand(
@@ -44,6 +57,8 @@ export async function diffCommand(
 
   const gitRef = parseGitRef(ref);
   const cwd = merged.directory || process.cwd();
+
+  const outputPath = resolveDiffOutputPath(file, cwd, merged.output, merged.stdout);
 
   const spinner = !merged.quiet ? createSpinner(`Generating diff for ${file}...`) : null;
   spinner?.start();
@@ -96,7 +111,12 @@ export async function diffCommand(
     });
 
     spinner?.stop();
-    outputResult(diffOutput, merged.output);
+    if (outputPath) {
+      outputResult(diffOutput, outputPath);
+    }
+    if (merged.stdout) {
+      outputResult(diffOutput, undefined);
+    }
   } catch (error) {
     spinner?.stop("Failed");
     throw error;

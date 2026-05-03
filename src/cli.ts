@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { renderCommand } from "./commands/render.js";
-import { importCommand } from "./commands/import.js";
 import { exportCommand } from "./commands/export.js";
 import { diffCommand, diffBatchCommand, diffListCommand } from "./commands/diff.js";
 import { initCommand } from "./commands/init.js";
@@ -12,9 +11,7 @@ const program = new Command();
 
 program
   .name("diagrams")
-  .description(
-    "CLI for diagrams-js - render, import, export, diff, and manage architecture diagrams",
-  )
+  .description("CLI for diagrams-js - render, export, diff, and manage architecture diagrams")
   .version("0.1.0")
   .configureOutput({
     writeErr: (str) => process.stderr.write(str),
@@ -28,10 +25,20 @@ program.option("-C, --config <path>", "path to config file");
 // diagrams render <file>
 program
   .command("render")
-  .description("Render a diagram file to SVG, PNG, JPG, DOT, or JSON")
-  .argument("<file>", "diagram file (.ts, .js, .json, .svg)")
-  .option("-o, --output <path>", "output file path (default: stdout)")
+  .description(
+    "Render a diagram file to SVG, PNG, JPG, DOT, or JSON (supports plugin import for .yaml/.yml)",
+  )
+  .argument("[file]", "diagram file (.ts, .js, .json, .svg, .yaml, .yml) or - for stdin")
+  .option(
+    "-o, --output <path>",
+    "output file path (default: same name as input with .svg extension)",
+  )
+  .option("--stdout", "output to stdout (in addition to --output if both are set)")
   .option("-f, --format <format>", "output format (svg|png|jpg|dot|json)")
+  .option(
+    "-p, --plugin <name>",
+    "plugin to use for importing .yaml/.yml files (auto-detected if omitted)",
+  )
   .option("-t, --theme <theme>", "color theme")
   .option("-d, --direction <dir>", "layout direction (TB|BT|LR|RL)")
   .option("--curve-style <style>", "edge curve style (ortho|curved|spline|polyline)")
@@ -49,37 +56,14 @@ program
     }
   });
 
-// diagrams import <file>
-program
-  .command("import")
-  .description("Import from external formats (docker-compose, kubernetes, etc.)")
-  .argument("<file>", "source file to import (.yaml, .yml)")
-  .option("-o, --output <path>", "output file path (default: stdout)")
-  .option("-f, --format <format>", "output format (svg|png|jpg|dot|json)", "svg")
-  .option("-p, --plugin <name>", "plugin to use for import (auto-detected if omitted)")
-  .option("-t, --theme <theme>", "color theme")
-  .option("-d, --direction <dir>", "layout direction (TB|BT|LR|RL)")
-  .option("--curve-style <style>", "edge curve style")
-  .option("--width <px>", "output width", parseInt)
-  .option("--height <px>", "output height", parseInt)
-  .option("--scale <n>", "scale factor", parseFloat)
-  .option("--data-url", "output as data URL")
-  .action(async (file, options) => {
-    try {
-      await importCommand(file, options);
-    } catch (error) {
-      console.error("Error:", error instanceof Error ? error.message : String(error));
-      process.exit(1);
-    }
-  });
-
 // diagrams export <file>
 program
   .command("export")
   .description("Export a diagram to an external format")
-  .argument("<file>", "diagram file (.ts, .js, .json, .svg)")
+  .argument("<file>", "diagram file (.ts, .js, .json, .svg) or - for stdin")
   .requiredOption("-f, --format <format>", "export format (e.g., docker-compose, kubernetes)")
-  .option("-o, --output <path>", "output file path (default: stdout)")
+  .option("-o, --output <path>", "output file path (default: same name with format extension)")
+  .option("--stdout", "output to stdout (in addition to --output if both are set)")
   .option("-p, --plugin <name>", "plugin to use (defaults to format name)")
   .action(async (file, options) => {
     try {
@@ -99,8 +83,9 @@ diffCmd
   .command("show")
   .description("Show diff for a specific file between git refs")
   .argument("<ref>", "git ref (e.g., HEAD, main...feature, abc123..def456)")
-  .argument("<file>", "diagram file path")
-  .option("-o, --output <path>", "output file path (default: stdout)")
+  .argument("<file>", "diagram file path (used for git lookup and output naming)")
+  .option("-o, --output <path>", "output file path (default: <filename>-diff.html)")
+  .option("--stdout", "output to stdout (in addition to --output if both are set)")
   .option("-F, --format <format>", "diff output format (html|svg)", "html")
   .option("-t, --theme <theme>", "theme (light|dark)", "light")
   .option("-l, --layout <layout>", "layout (side-by-side|stacked)", "side-by-side")
@@ -175,7 +160,10 @@ program
   .command("watch")
   .description("Watch a diagram file and re-render on changes")
   .argument("<file>", "diagram file to watch")
-  .option("-o, --output <path>", "output file path")
+  .option(
+    "-o, --output <path>",
+    "output file path (default: same name as input with .svg extension)",
+  )
   .option("-f, --format <format>", "output format (svg|png|jpg|dot|json)", "svg")
   .option("-t, --theme <theme>", "color theme")
   .option("-d, --direction <dir>", "layout direction (TB|BT|LR|RL)")

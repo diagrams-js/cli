@@ -4,7 +4,6 @@ export default defineConfig({
   pack: {
     entry: {
       cli: "./src/cli.ts",
-      index: "./src/index.ts",
     },
     format: ["esm"],
     outExtensions: () => ({

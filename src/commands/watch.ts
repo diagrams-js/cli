@@ -9,7 +9,7 @@ import { formatFromPath, createSpinner } from "../utils/helpers.js";
 import { loadConfig, mergeWithConfig } from "../utils/config.js";
 import type { RenderOptions } from "diagrams-js";
 import { writeFileSync } from "fs";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
 import { mkdirSync } from "fs";
 
 export interface WatchCommandOptions {
@@ -40,17 +40,23 @@ export async function watchCommand(file: string, options: WatchCommandOptions): 
   const outputFormat =
     merged.format || (merged.output ? formatFromPath(merged.output) : undefined) || "svg";
 
+  // Determine output path: explicit --output > default to same-name svg
+  let outputPath: string | undefined;
+  if (merged.output) {
+    outputPath = merged.output;
+  } else {
+    const inputPath = resolve(process.cwd(), file);
+    const baseName = inputPath.replace(/\.[^.]+$/, "");
+    outputPath = `${baseName}.${outputFormat}`;
+  }
+
   if (!merged.quiet) {
     console.error(`Watching ${file} for changes...`);
-    if (merged.output) {
-      console.error(`Output: ${merged.output} (${outputFormat})`);
-    } else {
-      console.error(`Output: stdout (${outputFormat})`);
-    }
+    console.error(`Output: ${outputPath} (${outputFormat})`);
   }
 
   // Initial render
-  await renderOnce(file, merged, outputFormat);
+  await renderOnce(file, merged, outputFormat, outputPath);
 
   // Set up watcher
   const watcher = createWatcher(file, {
@@ -63,7 +69,7 @@ export async function watchCommand(file: string, options: WatchCommandOptions): 
       console.error(`\n[change] ${file}`);
     }
     try {
-      await renderOnce(file, merged, outputFormat);
+      await renderOnce(file, merged, outputFormat, outputPath);
     } catch (error) {
       console.error("Render failed:", error instanceof Error ? error.message : String(error));
     }
@@ -83,6 +89,7 @@ async function renderOnce(
   file: string,
   options: WatchCommandOptions,
   outputFormat: string,
+  outputPath: string,
 ): Promise<void> {
   const spinner = !options.quiet ? createSpinner("Rendering...") : null;
   spinner?.start();
@@ -103,20 +110,16 @@ async function renderOnce(
 
     const result = await diagram.render(renderOptions);
 
-    if (options.output) {
-      const dir = dirname(options.output);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
-      }
-      if (typeof result === "string") {
-        writeFileSync(options.output, result, "utf-8");
-      } else {
-        writeFileSync(options.output, Buffer.from(result));
-      }
-      spinner?.stop(`Rendered to ${options.output}`);
-    } else {
-      spinner?.stop("Rendered (output to stdout suppressed in watch mode)");
+    const dir = dirname(outputPath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
     }
+    if (typeof result === "string") {
+      writeFileSync(outputPath, result, "utf-8");
+    } else {
+      writeFileSync(outputPath, Buffer.from(result));
+    }
+    spinner?.stop(`Rendered to ${outputPath}`);
   } catch (error) {
     spinner?.stop("Failed");
     throw error;

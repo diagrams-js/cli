@@ -4,14 +4,28 @@ CLI for [diagrams-js](https://diagrams-js.hatemhosny.dev) - render, import, expo
 
 ## Installation
 
+Install globally with `npm`:
+
 ```bash
 npm install -g @diagrams-js/cli
+
+# then run `diagrams`
+diagrams render diagram.ts
 ```
 
-Or use with npx:
+Alternatively, install locally in your project:
 
 ```bash
-npx @diagrams-js/cli render diagram.ts -o out.svg
+npm install @diagrams-js/cli
+
+# then run `npx diagrams`
+npx diagrams render diagram.ts
+```
+
+Or use directly with `npx`:
+
+```bash
+npx @diagrams-js/cli render diagram.ts
 ```
 
 ## Usage
@@ -32,17 +46,19 @@ diagrams render diagram.ts -f svg -t dark -d LR -o out.svg
 diagrams render diagram.json -f json
 ```
 
-### Import from external formats
+### Render from external formats (plugin import)
+
+The `render` command automatically imports from `.yaml`/`.yml` files via plugins:
 
 ```bash
 # Import Docker Compose and render to SVG
-diagrams import docker-compose.yml -o architecture.svg
+diagrams render docker-compose.yml -o architecture.svg
 
 # Import Kubernetes manifest
-diagrams import k8s-deployment.yaml -p kubernetes -o architecture.svg
+diagrams render k8s-deployment.yaml -p kubernetes -o architecture.svg
 
 # Import with custom options
-diagrams import compose.yml -f png -t dark --width 1200 -o out.png
+diagrams render compose.yml -f png -t dark --width 1200 -o out.png
 ```
 
 ### Export to external formats
@@ -145,30 +161,6 @@ Create a `.diagramsrc.json` file in your project root:
 | `dot`  | Graphviz DOT source                    |
 | `json` | Diagram JSON serialization             |
 | `html` | Self-contained HTML diff               |
-
-## Programmatic API
-
-All CLI commands are available programmatically:
-
-```typescript
-import { render, importDiagram, diff, init } from "@diagrams-js/cli";
-
-// Render
-await render("diagram.ts", { format: "svg", output: "out.svg" });
-
-// Import
-await importDiagram("docker-compose.yml", { output: "architecture.svg" });
-
-// Diff
-await diff("HEAD", "diagram.json", { format: "html", output: "diff.html" });
-
-// Init
-await init("My Architecture", { template: "aws", output: "diagram.ts" });
-```
-
-## Cross-Platform
-
-Works on Windows, macOS, and Linux.
 
 ## License
 

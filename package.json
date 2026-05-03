@@ -1,6 +1,6 @@
 {
   "name": "@diagrams-js/cli",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "CLI for diagrams-js - render, import, export, diff, and manage architecture diagrams",
   "keywords": [
     "architecture",
@@ -27,12 +27,6 @@
     "LICENSE"
   ],
   "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
-    }
-  },
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",

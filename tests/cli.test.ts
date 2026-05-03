@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vite-plus/test";
+import { describe, it, expect, vi } from "vite-plus/test";
 import {
   formatFromPath,
   inputFormatFromPath,
@@ -7,6 +7,10 @@ import {
 } from "../src/utils/helpers.js";
 import { loadConfig, mergeWithConfig } from "../src/utils/config.js";
 import { parseGitRef } from "../src/commands/diff.js";
+import { resolveRenderOutputPath } from "../src/commands/render.js";
+import { resolveDiffOutputPath } from "../src/commands/diff.js";
+import { resolveExportOutputPath } from "../src/commands/export.js";
+import { isImportableFile, isDiagramFile, readStdin } from "../src/utils/file-loader.js";
 
 describe("CLI helpers", () => {
   it("should detect format from file path", () => {
@@ -80,5 +84,163 @@ describe("Git ref parsing", () => {
   it("should trim whitespace", () => {
     expect(parseGitRef(" main ")).toEqual({ base: "main" });
     expect(parseGitRef("main .. feature")).toEqual({ base: "main", target: "feature" });
+  });
+});
+
+describe("resolveRenderOutputPath", () => {
+  it("should default to same-name svg in same directory", () => {
+    const result = resolveRenderOutputPath("diagram.ts", "svg", undefined, undefined);
+    expect(result).toMatch(/diagram\.svg$/);
+  });
+
+  it("should default to same-name with given format", () => {
+    const result = resolveRenderOutputPath("diagram.ts", "png", undefined, undefined);
+    expect(result).toMatch(/diagram\.png$/);
+  });
+
+  it("should handle relative paths", () => {
+    const result = resolveRenderOutputPath("src/diagram.ts", "svg", undefined, undefined);
+    expect(result).toMatch(/src[/\\]diagram\.svg$/);
+  });
+
+  it("should use explicit output path when provided", () => {
+    const result = resolveRenderOutputPath("diagram.ts", "svg", "out/custom.svg", undefined);
+    expect(result).toBe("out/custom.svg");
+  });
+
+  it("should return undefined when stdout is set", () => {
+    const result = resolveRenderOutputPath("diagram.ts", "svg", undefined, true);
+    expect(result).toBeUndefined();
+  });
+
+  it("should prefer explicit output over stdout", () => {
+    const result = resolveRenderOutputPath("diagram.ts", "svg", "out/custom.svg", true);
+    expect(result).toBe("out/custom.svg");
+  });
+});
+
+describe("resolveDiffOutputPath", () => {
+  it("should default to <filename>-diff.html", () => {
+    const result = resolveDiffOutputPath("diagram.ts", "/project", undefined, undefined);
+    expect(result).toMatch(/diagram-diff\.html$/);
+  });
+
+  it("should preserve directory from cwd", () => {
+    const result = resolveDiffOutputPath("src/diagram.ts", "/project", undefined, undefined);
+    expect(result).toMatch(/[/\\]project[/\\]diagram-diff\.html$/);
+  });
+
+  it("should use explicit output path when provided", () => {
+    const result = resolveDiffOutputPath("diagram.ts", "/project", "custom.html", undefined);
+    expect(result).toBe("custom.html");
+  });
+
+  it("should return undefined when stdout is set", () => {
+    const result = resolveDiffOutputPath("diagram.ts", "/project", undefined, true);
+    expect(result).toBeUndefined();
+  });
+
+  it("should prefer explicit output over stdout", () => {
+    const result = resolveDiffOutputPath("diagram.ts", "/project", "custom.html", true);
+    expect(result).toBe("custom.html");
+  });
+});
+
+describe("file type detection", () => {
+  it("should detect diagram files", () => {
+    expect(isDiagramFile("diagram.ts")).toBe(true);
+    expect(isDiagramFile("diagram.js")).toBe(true);
+    expect(isDiagramFile("diagram.mjs")).toBe(true);
+    expect(isDiagramFile("diagram.json")).toBe(true);
+    expect(isDiagramFile("diagram.svg")).toBe(true);
+    expect(isDiagramFile("diagram.yaml")).toBe(false);
+    expect(isDiagramFile("diagram.yml")).toBe(false);
+    expect(isDiagramFile("diagram.txt")).toBe(false);
+  });
+
+  it("should detect importable files", () => {
+    expect(isImportableFile("docker-compose.yml")).toBe(true);
+    expect(isImportableFile("docker-compose.yaml")).toBe(true);
+    expect(isImportableFile("k8s.yaml")).toBe(true);
+    expect(isImportableFile("diagram.ts")).toBe(false);
+    expect(isImportableFile("diagram.json")).toBe(false);
+  });
+});
+
+describe("resolveExportOutputPath", () => {
+  it("should default to file with format extension", () => {
+    const result = resolveExportOutputPath("diagram.json", "docker-compose", undefined, undefined);
+    expect(result).toMatch(/diagram\.yml$/);
+  });
+
+  it("should use yaml for kubernetes", () => {
+    const result = resolveExportOutputPath("diagram.json", "kubernetes", undefined, undefined);
+    expect(result).toMatch(/diagram\.yaml$/);
+  });
+
+  it("should use format name as extension for unknown formats", () => {
+    const result = resolveExportOutputPath("diagram.json", "custom", undefined, undefined);
+    expect(result).toMatch(/diagram\.custom$/);
+  });
+
+  it("should use 'diagram' as base name for stdin", () => {
+    const result = resolveExportOutputPath("-", "docker-compose", undefined, undefined);
+    expect(result).toMatch(/diagram\.yml$/);
+  });
+
+  it("should use explicit output when provided", () => {
+    const result = resolveExportOutputPath(
+      "diagram.json",
+      "docker-compose",
+      "out/compose.yml",
+      undefined,
+    );
+    expect(result).toBe("out/compose.yml");
+  });
+
+  it("should return undefined when stdout is set", () => {
+    const result = resolveExportOutputPath("diagram.json", "docker-compose", undefined, true);
+    expect(result).toBeUndefined();
+  });
+
+  it("should prefer explicit output over stdout", () => {
+    const result = resolveExportOutputPath(
+      "diagram.json",
+      "docker-compose",
+      "out/compose.yml",
+      true,
+    );
+    expect(result).toBe("out/compose.yml");
+  });
+});
+
+describe("readStdin", () => {
+  it("should read data from stdin", async () => {
+    const originalIsTTY = process.stdin.isTTY;
+    process.stdin.isTTY = false;
+
+    const mockData = '{"name":"test"}';
+    const handlers: Record<string, ((arg?: unknown) => void)[]> = {};
+
+    vi.spyOn(process.stdin, "setEncoding").mockImplementation(() => process.stdin);
+    vi.spyOn(process.stdin, "on").mockImplementation(
+      (event: string, handler: (arg?: unknown) => void) => {
+        if (!handlers[event]) handlers[event] = [];
+        handlers[event].push(handler);
+        return process.stdin;
+      },
+    );
+
+    const promise = readStdin();
+
+    // Simulate data and end events
+    handlers["data"]?.forEach((h) => h(mockData));
+    handlers["end"]?.forEach((h) => h());
+
+    const result = await promise;
+    expect(result).toBe(mockData);
+
+    process.stdin.isTTY = originalIsTTY;
+    vi.restoreAllMocks();
   });
 });

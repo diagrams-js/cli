@@ -1,11 +1,10 @@
 /**
  * File loading utilities for diagram sources
- * Handles .ts, .js, .json, and .svg input files
+ * Handles .ts, .js, .json, .svg input files, stdin, and inline data
  */
 
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from "fs";
 import { resolve, join, extname } from "path";
-import { fileURLToPath } from "url";
 import type { Diagram } from "diagrams-js";
 
 /**
@@ -46,6 +45,65 @@ export async function loadDiagram(
     default:
       throw new Error(`Unsupported file format: ${ext}. Supported: .ts, .js, .mjs, .json, .svg`);
   }
+}
+
+/**
+ * Load a diagram from inline string data
+ * Supports JSON and SVG content
+ */
+export async function loadDiagramFromData(
+  data: string,
+  format?: string,
+): Promise<{ diagram: Diagram; format: string }> {
+  const trimmed = data.trim();
+  const detectedFormat = format || detectDataFormat(trimmed);
+
+  switch (detectedFormat) {
+    case "json": {
+      const { Diagram } = await import("diagrams-js");
+      const json = JSON.parse(trimmed);
+      const diagram = await Diagram.fromJSON(json);
+      return { diagram, format: "json" };
+    }
+    case "svg": {
+      const { Diagram } = await import("diagrams-js");
+      const diagram = await Diagram.fromSVG(trimmed);
+      return { diagram, format: "svg" };
+    }
+    default:
+      throw new Error(
+        `Could not detect diagram format from data. Use --format to specify (json|svg).`,
+      );
+  }
+}
+
+function detectDataFormat(data: string): string | undefined {
+  if (data.startsWith("{") || data.startsWith("[")) return "json";
+  if (data.startsWith("<svg") || data.includes("<svg")) return "svg";
+  return undefined;
+}
+
+/**
+ * Read all data from stdin
+ */
+export function readStdin(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    process.stdin.setEncoding("utf-8");
+    process.stdin.on("data", (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on("end", () => {
+      resolve(data);
+    });
+    process.stdin.on("error", (err) => {
+      reject(err);
+    });
+    // If stdin is already at EOF (not piped), resolve immediately
+    if (process.stdin.isTTY) {
+      resolve(data);
+    }
+  });
 }
 
 /**
@@ -126,6 +184,7 @@ main().catch(err => {
     return Diagram.fromJSON(json);
   } catch (error) {
     // Check for inline JSON comment fallback
+    const content = readFileSync(filePath, "utf-8");
     const jsonCommentMatch = content.match(/\/\/\s*diagram-json:\s*(\{[\s\S]*?\})/);
     if (jsonCommentMatch) {
       try {

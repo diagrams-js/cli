@@ -44,13 +44,12 @@ export default diagram;
 
   k8s: (name) => `import { Diagram } from "diagrams-js";
 import { Deploy } from "diagrams-js/k8s/compute";
-import { Pod } from "diagrams-js/k8s/compute";
-import { Svc } from "diagrams-js/k8s/network";
+import { SVC } from "diagrams-js/k8s/network";
 
 const diagram = Diagram("${name}");
 
 const deploy = diagram.add(Deploy("App Deployment"));
-const svc = diagram.add(Svc("App Service"));
+const svc = diagram.add(SVC("App Service"));
 
 svc.to(deploy);
 
