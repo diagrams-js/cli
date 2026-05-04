@@ -359,18 +359,26 @@ async function extractDiagramJSON(
 
   // For TS/JS files, execute them
   const { writeFileSync, rmSync, mkdirSync } = await import("fs");
-  const { join } = await import("path");
+  const { join, dirname } = await import("path");
 
   const isTypeScript = filePath.endsWith(".ts");
   const ext = isTypeScript ? ".ts" : ".js";
   const fullFilePath = cwd ? resolve(cwd, filePath) : resolve(filePath);
-  const importPath = "file://" + fullFilePath.replace(/\\/g, "/");
   const projectRoot = cwd || process.cwd();
 
   const wrapperDir = join(projectRoot, ".diagrams-cli");
   if (!existsSync(wrapperDir)) {
     mkdirSync(wrapperDir, { recursive: true });
   }
+
+  // Write the actual file content to a temp file so that relative imports resolve correctly.
+  // This is critical for the "before" side where content comes from git, not the working tree.
+  const tempFileName = `.diagrams-diff-content-${Date.now()}${ext}`;
+  const tempDir = dirname(fullFilePath);
+  const tempPath = join(tempDir, tempFileName);
+  writeFileSync(tempPath, fileContent, "utf-8");
+
+  const importPath = "file://" + tempPath.replace(/\\/g, "/");
 
   const wrapperContent = `
 import { Diagram } from "diagrams-js";
@@ -424,10 +432,12 @@ main().catch(err => {
     });
 
     rmSync(wrapperPath, { force: true });
+    rmSync(tempPath, { force: true });
     return JSON.parse(output.trim()) as DiagramJSON;
   } catch (error) {
     try {
       rmSync(wrapperPath, { force: true });
+      rmSync(tempPath, { force: true });
     } catch {
       // ignore
     }

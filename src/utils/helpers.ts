@@ -104,7 +104,8 @@ export function createSpinner(text: string) {
         clearInterval(interval);
         interval = null;
       }
-      process.stderr.write(`\r${message || "Done!"}\n`);
+      // Clear the spinner line so shorter final messages don't leave trailing characters
+      process.stderr.write(`\r\x1B[K${message || "Done!"}\n`);
     },
   };
 }

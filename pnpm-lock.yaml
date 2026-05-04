@@ -19,8 +19,8 @@ importers:
         specifier: ^12.0.0
         version: 12.1.0
       diagrams-js:
-        specifier: ^0.7.0
-        version: 0.7.0
+        specifier: ^0.7.1
+        version: 0.7.1
     devDependencies:
       '@types/node':
         specifier: ^25.5.0
@@ -761,8 +761,8 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  diagrams-js@0.7.0:
-    resolution: {integrity: sha512-FrfH+vD+S0ekVm4h0q9n3JB/53ueuOt2VXf7ZjcBGNrnyYPdu5ChDQTV/5RbBA33rUvs6iF8tPX4BpoWFoytBA==}
+  diagrams-js@0.7.1:
+    resolution: {integrity: sha512-r305+VXH8pLif9kia9pfWL6DY0hBNOIXbq82jAYUvo+ApGoOiyaXr1NbpRKSeDqzb3fKPzDcb9/CIbHc8oR4nA==}
 
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
@@ -1439,7 +1439,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  diagrams-js@0.7.0:
+  diagrams-js@0.7.1:
     optionalDependencies:
       sharp: 0.34.5
 
