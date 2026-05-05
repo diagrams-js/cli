@@ -78,7 +78,7 @@ diagrams export diagram.ts -f kubernetes -o manifest.yaml
 diagrams diff show HEAD diagram.ts -o diff.html
 
 # Diff between branches
-diagrams diff show main...feature diagram.json -F html -o diff.html
+diagrams diff show main...feature diagram.json -f html -o diff.html
 
 # List changed diagram files
 diagrams diff list HEAD

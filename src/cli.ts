@@ -86,13 +86,13 @@ diffCmd
   .argument("<file>", "diagram file path (used for git lookup and output naming)")
   .option("-o, --output <path>", "output file path (default: <filename>-diff.html)")
   .option("--stdout", "output to stdout (in addition to --output if both are set)")
-  .option("-F, --format <format>", "diff output format (html|svg)", "html")
+  .option("-f, --format <format>", "diff output format (html|svg)", "html")
   .option("-t, --theme <theme>", "theme (light|dark)", "light")
   .option("-l, --layout <layout>", "layout (side-by-side|stacked)", "side-by-side")
   .option("-u, --show-unchanged <mode>", "show unchanged (show|dim|hide)", "show")
   .option("--ignore-position", "ignore position/layout changes", true)
   .option("--ignore-metadata", "ignore metadata changes", false)
-  .option("-C, --directory <path>", "working directory for git commands")
+  .option("-D, --directory <path>", "working directory for git commands")
   .option("-q, --quiet", "suppress non-error output")
   .action(async (ref, file, options) => {
     try {
@@ -107,7 +107,7 @@ diffCmd
   .command("list")
   .description("List changed diagram files between git refs")
   .argument("<ref>", "git ref (e.g., HEAD, main...feature)")
-  .option("-C, --directory <path>", "working directory for git commands")
+  .option("-D, --directory <path>", "working directory for git commands")
   .option("-q, --quiet", "output only file paths")
   .action(async (ref, options) => {
     try {
@@ -123,11 +123,11 @@ diffCmd
   .description("Generate diffs for all changed diagram files")
   .argument("<ref>", "git ref (e.g., HEAD, main...feature)")
   .option("-o, --output-dir <dir>", "output directory for diff files", "./diffs")
-  .option("-F, --format <format>", "output format (html|svg)", "html")
+  .option("-f, --format <format>", "output format (html|svg)", "html")
   .option("-t, --theme <theme>", "theme (light|dark)", "light")
   .option("-u, --show-unchanged <mode>", "show unchanged (show|dim|hide)", "show")
   .option("--ignore-position", "ignore position/layout changes", true)
-  .option("-C, --directory <path>", "working directory for git commands")
+  .option("-D, --directory <path>", "working directory for git commands")
   .option("-q, --quiet", "suppress non-error output")
   .action(async (ref, options) => {
     try {
