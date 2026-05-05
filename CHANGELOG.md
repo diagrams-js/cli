@@ -1,3 +1,17 @@
+## [0.2.0] - 2026-05-05
+
+### Features
+
+- No new features
+
+### Bug Fixes
+
+- fix inconsistent flags (3106eb5)
+
+### Other Changes
+
+- No other changes
+
 ## [0.1.1] - 2026-05-04
 
 ### Features
